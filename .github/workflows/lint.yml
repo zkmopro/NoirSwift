@@ -32,8 +32,4 @@ jobs:
 
             - name: Lint Podspec
               run: |
-                  pod lib lint NoirSwift.podspec \
-                    --skip-tests \
-                    --skip-import-validation \
-                    --allow-warnings \
-                    --verbose
+                  pod spec lint --allow-warnings --verbose 
