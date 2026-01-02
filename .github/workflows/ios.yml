@@ -14,7 +14,7 @@ on:
     workflow_dispatch:
 
 jobs:
-    build:
+    test:
         runs-on: macos-latest
 
         steps:
@@ -25,9 +25,8 @@ jobs:
               run: |
                   sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
                   sudo xcodebuild -license accept
-
-            - name: Run Package Build
+            - name: Run Package Test
               run: |
-                  xcodebuild build \
+                  xcodebuild test \
                     -scheme NoirSwift \
-                    -destination 'generic/platform=iOS'
+                    -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=latest'
