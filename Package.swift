@@ -23,6 +23,10 @@ let package = Package(
         .binaryTarget(
             name: "NoirBindings",
             url: "https://ci-keys.zkmopro.org/NoirBindings.xcframework.zip",
+            // TODO(v1.0.0-beta.19): recompute after rebuilding & re-uploading the
+            // xcframework (`mopro build ios` from the beta.19 mopro-example-app-noir,
+            // then `swift package compute-checksum NoirBindings.xcframework.zip`).
+            // The current value is the beta.8 binary's checksum.
             checksum: "d00d834365706a621c9832803b96a5ac3bbdf35aacb77f0b76e259820761b1d3"
         ),
         .testTarget(
