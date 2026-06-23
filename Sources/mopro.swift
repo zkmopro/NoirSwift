@@ -352,19 +352,29 @@ private func uniffiTraitInterfaceCallWithError<T, E>(
         callStatus.pointee.errorBuf = FfiConverterString.lower(String(describing: error))
     }
 }
+// Initial value and increment amount for handles. 
+// These ensure that SWIFT handles always have the lowest bit set
+fileprivate let UNIFFI_HANDLEMAP_INITIAL: UInt64 = 1
+fileprivate let UNIFFI_HANDLEMAP_DELTA: UInt64 = 2
+
 fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
     // All mutation happens with this lock held, which is why we implement @unchecked Sendable.
     private let lock = NSLock()
     private var map: [UInt64: T] = [:]
-    private var currentHandle: UInt64 = 1
+    private var currentHandle: UInt64 = UNIFFI_HANDLEMAP_INITIAL
 
     func insert(obj: T) -> UInt64 {
         lock.withLock {
-            let handle = currentHandle
-            currentHandle += 1
-            map[handle] = obj
-            return handle
+            return doInsert(obj)
         }
+    }
+
+    // Low-level insert function, this assumes `lock` is held.
+    private func doInsert(_ obj: T) -> UInt64 {
+        let handle = currentHandle
+        currentHandle += UNIFFI_HANDLEMAP_DELTA
+        map[handle] = obj
+        return handle
     }
 
      func get(handle: UInt64) throws -> T {
@@ -373,6 +383,15 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
                 throw UniffiInternalError.unexpectedStaleHandle
             }
             return obj
+        }
+    }
+
+     func clone(handle: UInt64) throws -> UInt64 {
+        try lock.withLock {
+            guard let obj = map[handle] else {
+                throw UniffiInternalError.unexpectedStaleHandle
+            }
+            return doInsert(obj)
         }
     }
 
@@ -481,7 +500,7 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
 }
 
 
-public struct CircomProof {
+public struct CircomProof: Equatable, Hashable {
     public var a: G1
     public var b: G2
     public var c: G1
@@ -497,43 +516,15 @@ public struct CircomProof {
         self.`protocol` = `protocol`
         self.curve = curve
     }
+
+    
+
+    
 }
 
 #if compiler(>=6)
 extension CircomProof: Sendable {}
 #endif
-
-
-extension CircomProof: Equatable, Hashable {
-    public static func ==(lhs: CircomProof, rhs: CircomProof) -> Bool {
-        if lhs.a != rhs.a {
-            return false
-        }
-        if lhs.b != rhs.b {
-            return false
-        }
-        if lhs.c != rhs.c {
-            return false
-        }
-        if lhs.`protocol` != rhs.`protocol` {
-            return false
-        }
-        if lhs.curve != rhs.curve {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(a)
-        hasher.combine(b)
-        hasher.combine(c)
-        hasher.combine(`protocol`)
-        hasher.combine(curve)
-    }
-}
-
-
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -575,7 +566,7 @@ public func FfiConverterTypeCircomProof_lower(_ value: CircomProof) -> RustBuffe
 }
 
 
-public struct CircomProofResult {
+public struct CircomProofResult: Equatable, Hashable {
     public var proof: CircomProof
     public var inputs: [String]
 
@@ -585,31 +576,15 @@ public struct CircomProofResult {
         self.proof = proof
         self.inputs = inputs
     }
+
+    
+
+    
 }
 
 #if compiler(>=6)
 extension CircomProofResult: Sendable {}
 #endif
-
-
-extension CircomProofResult: Equatable, Hashable {
-    public static func ==(lhs: CircomProofResult, rhs: CircomProofResult) -> Bool {
-        if lhs.proof != rhs.proof {
-            return false
-        }
-        if lhs.inputs != rhs.inputs {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(proof)
-        hasher.combine(inputs)
-    }
-}
-
-
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -645,7 +620,7 @@ public func FfiConverterTypeCircomProofResult_lower(_ value: CircomProofResult) 
 }
 
 
-public struct G1 {
+public struct G1: Equatable, Hashable {
     public var x: String
     public var y: String
     public var z: String
@@ -657,35 +632,15 @@ public struct G1 {
         self.y = y
         self.z = z
     }
+
+    
+
+    
 }
 
 #if compiler(>=6)
 extension G1: Sendable {}
 #endif
-
-
-extension G1: Equatable, Hashable {
-    public static func ==(lhs: G1, rhs: G1) -> Bool {
-        if lhs.x != rhs.x {
-            return false
-        }
-        if lhs.y != rhs.y {
-            return false
-        }
-        if lhs.z != rhs.z {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(x)
-        hasher.combine(y)
-        hasher.combine(z)
-    }
-}
-
-
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -723,7 +678,7 @@ public func FfiConverterTypeG1_lower(_ value: G1) -> RustBuffer {
 }
 
 
-public struct G2 {
+public struct G2: Equatable, Hashable {
     public var x: [String]
     public var y: [String]
     public var z: [String]
@@ -735,35 +690,15 @@ public struct G2 {
         self.y = y
         self.z = z
     }
+
+    
+
+    
 }
 
 #if compiler(>=6)
 extension G2: Sendable {}
 #endif
-
-
-extension G2: Equatable, Hashable {
-    public static func ==(lhs: G2, rhs: G2) -> Bool {
-        if lhs.x != rhs.x {
-            return false
-        }
-        if lhs.y != rhs.y {
-            return false
-        }
-        if lhs.z != rhs.z {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(x)
-        hasher.combine(y)
-        hasher.combine(z)
-    }
-}
-
-
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -801,7 +736,7 @@ public func FfiConverterTypeG2_lower(_ value: G2) -> RustBuffer {
 }
 
 
-public struct Halo2ProofResult {
+public struct Halo2ProofResult: Equatable, Hashable {
     public var proof: Data
     public var inputs: Data
 
@@ -811,31 +746,15 @@ public struct Halo2ProofResult {
         self.proof = proof
         self.inputs = inputs
     }
+
+    
+
+    
 }
 
 #if compiler(>=6)
 extension Halo2ProofResult: Sendable {}
 #endif
-
-
-extension Halo2ProofResult: Equatable, Hashable {
-    public static func ==(lhs: Halo2ProofResult, rhs: Halo2ProofResult) -> Bool {
-        if lhs.proof != rhs.proof {
-            return false
-        }
-        if lhs.inputs != rhs.inputs {
-            return false
-        }
-        return true
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(proof)
-        hasher.combine(inputs)
-    }
-}
-
-
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -871,7 +790,7 @@ public func FfiConverterTypeHalo2ProofResult_lower(_ value: Halo2ProofResult) ->
 }
 
 
-public enum MoproError {
+public enum MoproError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
@@ -881,8 +800,21 @@ public enum MoproError {
     )
     case NoirError(String
     )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
 }
 
+#if compiler(>=6)
+extension MoproError: Sendable {}
+#endif
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -951,27 +883,19 @@ public func FfiConverterTypeMoproError_lower(_ value: MoproError) -> RustBuffer 
     return FfiConverterTypeMoproError.lower(value)
 }
 
-
-extension MoproError: Equatable, Hashable {}
-
-
-
-extension MoproError: Foundation.LocalizedError {
-    public var errorDescription: String? {
-        String(reflecting: self)
-    }
-}
-
-
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 
-public enum ProofLib {
+public enum ProofLib: Equatable, Hashable {
     
     case arkworks
     case rapidsnark
-}
 
+
+
+
+
+}
 
 #if compiler(>=6)
 extension ProofLib: Sendable {}
@@ -1024,10 +948,6 @@ public func FfiConverterTypeProofLib_lift(_ buf: RustBuffer) throws -> ProofLib 
 public func FfiConverterTypeProofLib_lower(_ value: ProofLib) -> RustBuffer {
     return FfiConverterTypeProofLib.lower(value)
 }
-
-
-extension ProofLib: Equatable, Hashable {}
-
 
 
 #if swift(>=5.8)
@@ -1104,11 +1024,30 @@ fileprivate struct FfiConverterDictionaryStringSequenceString: FfiConverterRustB
         return dict
     }
 }
+/**
+ * You can also customize the bindings by #[uniffi::export]
+ * Reference: https://mozilla.github.io/uniffi-rs/latest/proc_macro/index.html
+ */
+public func moproHelloWorld() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_mopro_example_app_noir_fn_func_mopro_hello_world($0
+    )
+})
+}
 public func generateCircomProof(zkeyPath: String, circuitInputs: String, proofLib: ProofLib)throws  -> CircomProofResult  {
     return try  FfiConverterTypeCircomProofResult_lift(try rustCallWithError(FfiConverterTypeMoproError_lift) {
     uniffi_mopro_example_app_noir_fn_func_generate_circom_proof(
         FfiConverterString.lower(zkeyPath),
         FfiConverterString.lower(circuitInputs),
+        FfiConverterTypeProofLib_lower(proofLib),$0
+    )
+})
+}
+public func verifyCircomProof(zkeyPath: String, proofResult: CircomProofResult, proofLib: ProofLib)throws  -> Bool  {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeMoproError_lift) {
+    uniffi_mopro_example_app_noir_fn_func_verify_circom_proof(
+        FfiConverterString.lower(zkeyPath),
+        FfiConverterTypeCircomProofResult_lower(proofResult),
         FfiConverterTypeProofLib_lower(proofLib),$0
     )
 })
@@ -1119,6 +1058,16 @@ public func generateHalo2Proof(srsPath: String, pkPath: String, circuitInputs: [
         FfiConverterString.lower(srsPath),
         FfiConverterString.lower(pkPath),
         FfiConverterDictionaryStringSequenceString.lower(circuitInputs),$0
+    )
+})
+}
+public func verifyHalo2Proof(srsPath: String, vkPath: String, proof: Data, publicInput: Data)throws  -> Bool  {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeMoproError_lift) {
+    uniffi_mopro_example_app_noir_fn_func_verify_halo2_proof(
+        FfiConverterString.lower(srsPath),
+        FfiConverterString.lower(vkPath),
+        FfiConverterData.lower(proof),
+        FfiConverterData.lower(publicInput),$0
     )
 })
 }
@@ -1150,7 +1099,7 @@ public func generateNoirProof(circuitPath: String, srsPath: String?, inputs: [St
  * on the intended use case:
  *
  * - `on_chain = true`: Uses Keccak hash for Solidity verifier compatibility
- * - `on_chain = false`: Uses Poseidon hash fotr better performance
+ * - `on_chain = false`: Uses Poseidon hash for better performance
  */
 public func getNoirVerificationKey(circuitPath: String, srsPath: String?, onChain: Bool, lowMemoryMode: Bool)throws  -> Data  {
     return try  FfiConverterData.lift(try rustCallWithError(FfiConverterTypeMoproError_lift) {
@@ -1159,35 +1108,6 @@ public func getNoirVerificationKey(circuitPath: String, srsPath: String?, onChai
         FfiConverterOptionString.lower(srsPath),
         FfiConverterBool.lower(onChain),
         FfiConverterBool.lower(lowMemoryMode),$0
-    )
-})
-}
-/**
- * You can also customize the bindings by #[uniffi::export]
- * Reference: https://mozilla.github.io/uniffi-rs/latest/proc_macro/index.html
- */
-public func moproHelloWorld() -> String  {
-    return try!  FfiConverterString.lift(try! rustCall() {
-    uniffi_mopro_example_app_noir_fn_func_mopro_hello_world($0
-    )
-})
-}
-public func verifyCircomProof(zkeyPath: String, proofResult: CircomProofResult, proofLib: ProofLib)throws  -> Bool  {
-    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeMoproError_lift) {
-    uniffi_mopro_example_app_noir_fn_func_verify_circom_proof(
-        FfiConverterString.lower(zkeyPath),
-        FfiConverterTypeCircomProofResult_lower(proofResult),
-        FfiConverterTypeProofLib_lower(proofLib),$0
-    )
-})
-}
-public func verifyHalo2Proof(srsPath: String, vkPath: String, proof: Data, publicInput: Data)throws  -> Bool  {
-    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeMoproError_lift) {
-    uniffi_mopro_example_app_noir_fn_func_verify_halo2_proof(
-        FfiConverterString.lower(srsPath),
-        FfiConverterString.lower(vkPath),
-        FfiConverterData.lower(proof),
-        FfiConverterData.lower(publicInput),$0
     )
 })
 }
@@ -1221,34 +1141,34 @@ private enum InitializationResult {
 // the code inside is only computed once.
 private let initializationResult: InitializationResult = {
     // Get the bindings contract version from our ComponentInterface
-    let bindings_contract_version = 29
+    let bindings_contract_version = 30
     // Get the scaffolding contract version by calling the into the dylib
     let scaffolding_contract_version = ffi_mopro_example_app_noir_uniffi_contract_version()
     if bindings_contract_version != scaffolding_contract_version {
         return InitializationResult.contractVersionMismatch
     }
-    if (uniffi_mopro_example_app_noir_checksum_func_generate_circom_proof() != 55170) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_mopro_example_app_noir_checksum_func_generate_halo2_proof() != 65476) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_mopro_example_app_noir_checksum_func_generate_noir_proof() != 22778) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_mopro_example_app_noir_checksum_func_get_noir_verification_key() != 34545) {
-        return InitializationResult.apiChecksumMismatch
-    }
     if (uniffi_mopro_example_app_noir_checksum_func_mopro_hello_world() != 15319) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mopro_example_app_noir_checksum_func_verify_circom_proof() != 63817) {
+    if (uniffi_mopro_example_app_noir_checksum_func_generate_circom_proof() != 63522) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mopro_example_app_noir_checksum_func_verify_halo2_proof() != 55722) {
+    if (uniffi_mopro_example_app_noir_checksum_func_verify_circom_proof() != 2) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_mopro_example_app_noir_checksum_func_verify_noir_proof() != 51044) {
+    if (uniffi_mopro_example_app_noir_checksum_func_generate_halo2_proof() != 8670) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mopro_example_app_noir_checksum_func_verify_halo2_proof() != 30200) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mopro_example_app_noir_checksum_func_generate_noir_proof() != 48204) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mopro_example_app_noir_checksum_func_get_noir_verification_key() != 32602) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_mopro_example_app_noir_checksum_func_verify_noir_proof() != 53745) {
         return InitializationResult.apiChecksumMismatch
     }
 
