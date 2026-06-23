@@ -29,7 +29,7 @@ let package = Package(
         //...
     ],
     dependencies: [
-        .package(url: "https://github.com/zkmopro/NoirSwift", from: "1.0.0-beta.8")
+        .package(url: "https://github.com/zkmopro/NoirSwift", from: "1.0.0-beta.19")
     ],
     // ...
     targets: [

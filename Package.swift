@@ -22,8 +22,8 @@ let package = Package(
         ),
         .binaryTarget(
             name: "NoirBindings",
-            url: "https://ci-keys.zkmopro.org/NoirBindings.xcframework.zip",
-            checksum: "d00d834365706a621c9832803b96a5ac3bbdf35aacb77f0b76e259820761b1d3"
+            url: "https://github.com/zkmopro/NoirSwift/releases/download/v1.0.0-beta.19/NoirBindings.xcframework.zip",
+            checksum: "00b6234deb548e3eac1eccb33592d94a78c13ea0a5074b38114a3b8f12aa21fc"
         ),
         .testTarget(
             name: "NoirSwiftTests",
