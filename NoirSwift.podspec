@@ -16,7 +16,7 @@ Pod::Spec.new do |spec|
   #
 
   spec.name         = "NoirSwift"
-  spec.version      = "0.0.1"
+  spec.version      = "1.0.0-beta.19"
   spec.summary      = "Swift bindings for generating and verifying Noir zero-knowledge proofs."
 
   # This description is used to generate tags and improve search results.
@@ -82,12 +82,20 @@ using a prebuilt barretenberg backend. Bindings are generated via the mopro CLI.
   #
 
   spec.source = {
-    :http => "https://ci-keys.zkmopro.org/MoproiOSBindings.zip"
+    :http => "https://github.com/zkmopro/NoirSwift/releases/download/v1.0.0-beta.19/MoproiOSBindings.zip"
   }
-  
+
   spec.vendored_frameworks = 'MoproiOSBindings/MoproBindings.xcframework'
   spec.source_files = "MoproiOSBindings/*.swift"
 
+  # noir-rs v1.0.0-beta.19 ships no x86_64-apple-ios-simulator slice; exclude it
+  # so simulator builds resolve the arm64 xcframework module.
+  spec.pod_target_xcconfig = {
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
+  }
+  spec.user_target_xcconfig = {
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'x86_64'
+  }
 
   spec.static_framework = true
 
